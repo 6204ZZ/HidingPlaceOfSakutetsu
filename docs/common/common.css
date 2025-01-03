@@ -1,0 +1,106 @@
+/* header {
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+} */
+
+header .logo img {
+    display: block;
+    width: 300px;
+    margin: 10px auto;
+}
+
+header .glovalNavi {
+    border: solid #FFD966;
+    border-width: 3px 0;
+}
+header .glovalNavi ul {
+    padding: 0;
+    margin: 0;
+}
+header .glovalNavi ul:after {
+    content: "";
+    clear: both;
+    display: block;
+}
+header .glovalNavi ul li {
+    list-style-type: none;
+    width: 192px;
+    float: left;
+    border-left: solid 3px #FFD966;
+    padding: 0 0;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 21px;
+}
+header .glovalNavi ul li:last-child {
+    border-right: solid 3px #FFD966;
+}
+header .glovalNavi ul li a {
+    color: #FFD966;
+    text-decoration: none;
+    display: block;
+    padding: 5px 0 3px 0;
+}
+header .glovalNavi ul li a:hover/*,
+header .glovalNavi ul li.current a*/ {
+    color: #111111;
+    background-color: #FFD966;
+    font-weight: bold; /*黄色背景に黒文字だと細く見えるので補正*/
+}
+
+.topicPath {
+    font-size: 21px;
+    margin-top: 10px;
+}
+.topicPath a,
+article a {
+    color: #FFD966;
+}
+.topicPath a:hover,
+article a:hover {
+    color: #FF4B00;
+}
+
+body {
+    width: 960px;
+    font-size: 13px;
+    line-height: 1.5;
+    background-color: #111111;
+    color: #EEEEEE;
+    margin: auto;
+}
+article section {
+    margin-bottom: 50px;
+}
+h1 {
+    font-size: 21px;
+    margin-bottom: 0;
+}
+h2 {
+    font-size: 17px;
+    margin-top: 7px;
+    margin-bottom: 0;
+}
+h3 {
+    font-size: 13px;
+    margin-top: 7px;
+    margin-bottom: 0;
+}
+h4 {
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+p{
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+footer {
+    /* background-color: #FFD966; */
+    /* color: #111111; */
+    border: solid 3px #EEEEEE;
+    margin-top: 30px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 15px;
+}

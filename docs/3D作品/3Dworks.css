@@ -1,0 +1,26 @@
+article section h2 p {
+    display: inline;
+    font-size: 13px;
+}
+article section img {
+    display: block;
+    width: 50%;
+    margin: 0 auto;
+}
+/* article section img:hover {
+    scale: 1.5;
+} */
+article #pantograph img {
+    width: 40%;
+}
+article #Series2000 img {
+    width: 80%;
+}
+
+
+/* article section iframe {
+    display: block;
+    margin: 0 auto;
+    width: 720px;
+    height: 405px;
+} */
