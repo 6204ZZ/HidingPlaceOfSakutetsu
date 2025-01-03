@@ -6,7 +6,7 @@ function commonHeader() {
     html += '<nav class="glovalNavi">';
     html += '   <ul>';
     html += '       <li><a href="/HidingPlaceOfSakutetsu/3D作品/3Dworks.html">3D作品</a></li>';
-    html += '       <li><a href="/HidingPlaceOfSakutetsu/電子工作/electoronics.html">電子工作</a></li>';
+    html += '       <li><a href="../電子工作/electoronics.html">電子工作</a></li>';
     html += '       <li><a href="/HidingPlaceOfSakutetsu/イラスト/illustrations.html">イラスト</a></li>';
     html += '       <li><a href="">空き</a></li>';
     html += '       <li><a href="">空き</a></li>';
