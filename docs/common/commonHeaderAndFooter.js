@@ -1,13 +1,13 @@
 function commonHeader() {
     var html = "";
-    html += '<a class="logo" href="/index.html">';
-    html += '   <img src="/common/pictures/logo2.png" alt="作鉄の秘密基地">';
+    html += '<a class="logo" href="/HidingPlaceOfSakutetsu/index.html">';
+    html += '   <img src="/HidingPlaceOfSakutetsu/common/pictures/logo2.png" alt="作鉄の秘密基地">';
     html += '</a>';
     html += '<nav class="glovalNavi">';
     html += '   <ul>';
-    html += '       <li><a href="/3D作品/3Dworks.html">3D作品</a></li>';
-    html += '       <li><a href="/電子工作/electoronics.html">電子工作</a></li>';
-    html += '       <li><a href="/イラスト/illustrations.html">イラスト</a></li>';
+    html += '       <li><a href="/HidingPlaceOfSakutetsu/3D作品/3Dworks.html">3D作品</a></li>';
+    html += '       <li><a href="/HidingPlaceOfSakutetsu/電子工作/electoronics.html">電子工作</a></li>';
+    html += '       <li><a href="/HidingPlaceOfSakutetsu/イラスト/illustrations.html">イラスト</a></li>';
     html += '       <li><a href="">空き</a></li>';
     html += '       <li><a href="">空き</a></li>';
     html += '   </ul>';
