@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8">
+  <title>2相ステッピングモータのVVVF制御</title>
+  <link rel="stylesheet" href="../../common/normalize.css">
+  <link rel="stylesheet" href="../../common/common.css">
+  <link rel="stylesheet" href="vvvfControlFor2PhaseStepperMotor.css">
+  <!-- <meta name="viewport" content="width=device-width,initialscale=1.0"> -->
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script src="../../common/commonHeaderAndFooter.js"></script>
+  <meta name="robots" content="noindex">
+</head>
+
+<body>
+  <header>
+    <script>commonHeader();</script>
+  </header>
+
+  <p class="topicPath">
+    <a href="../../index.html">ホーム</a> &gt <a href="../electoronics.html">電子工作</a> &gt 2相ステッピングモータのVVVF制御
+  </p>
+
+  <article>
+    <h1 class="pageTitle">2相ステッピングモータのVVVF制御</h1>
+
+    <section id="contents">
+      <h2 class="headingTypeA">目次</h2>
+      <ul>
+        <li>1 <a href="#chapter1">経緯・動機</a></li>
+        <li>
+          2 <a href="#chapter2">原理</a>
+          <ul>
+            <li>2.1 <a href="#chapter2-1">ステッピングモータ</a></li>
+            <li>2.2 <a href="#chapter2-2">インバータ</a></li>
+          </ul>
+        </li>
+        <li>
+          3 <a href="#chapter3">ソフトウェア</a>
+          <ul>
+            <li>3.1 <a href="#chapter3-1">ソースコード全体</a></li>
+            <li>3.2 <a href="#chapter3-2">ソースコード解説</a></li>
+          </ul>
+        </li>
+        <li>
+          4 <a href="#chapter4">ハードウェア</a>
+          <ul>
+            <li>4.1 <a href="#chapter4-1">使ったもの</a></li>
+            <li>4.2 <a href="#chapter4-2">回路</a></li>
+          </ul>
+        </li>
+        <li>5 <a href="#chapter5">結果</a></li>
+        <li>6 <a href="#chapter6">終わりに</a></li>
+      </ul>
+    </section>
+
+    <section id="chapter1">
+      <h2 class="headingTypeA">1 経緯・動機　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+      <p>
+        　私はOJゲージ車両の製作において「①内装を表現すること」、「②仕掛けを搭載すること」、「③望みのスケールスピードで走らせること」を目指しています。
+        ①、②より、仕掛けを動作させるためのバッテリーや回路は車内に搭載できず、床下に積むことになります。
+        そのため、モータや歯車などの駆動機構は台車内に収める必要が生じます。
+        すると小さなモータしか使えなくなり、加えて歯車の大きさや個数も制限されるため歯車比を大きくすることも難しくなります。
+        その結果、モータの個数を増やさないと力が確保できなくなります。これは③を達成するにあたり都合がよくありません。
+        なぜなら、モータの個数が増えるとシステムが複雑になるからです。
+        正確な速さで走らせるためにはセンサを用いてモータや車輪などの回転数を取得し、それに応じてモータを適切に制御する必要があります。
+        そのセンサと制御はモータの個数分だけ必要になるのです。
+        また、そもそもセンサを付けるスペースがほとんどない、無理してセンサを取り付けると模型としての見た目が損なわれる、といった問題もあります。<br>
+        　センサなしでも正確な速さで回せるモータとしてステッピングモータがあることは以前から意識していました。
+        同時に、OJゲージの台車に収まるほど小さなものがあるのか、回すのが難しいのではないかという懸念を抱いていました。
+        しかし、小さなステッピングモータは偶然立ち寄った店で発見したうえ、A4988というモータドライバを使えば簡単にステッピングモータを駆動できることが分かりました。
+        これにて①、②、③の目標を達成できそうです。
+        しかし、あまりにも突然に懸念が解消してしまい、私は少々物足りなさを感じました。
+        その後、ステッピングモータと3相誘導電動機がともに交流で動作することに気づき、ステッピングモータもVVVF制御できるのではないかと考えました。<br>
+        　この度は2相ステッピングモータ(以下、ステッピングモータ)をVVVF制御することができたので、これを文章で記録することにしました。
+      </p>
+    </section>
+
+    <section id="chapter2">
+      <h2 class="headingTypeA">2 原理　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+
+      <section id="chapter2-1">
+        <h3 class="headingTypeB">2.1 ステッピングモータ<sup>[1]</sup>　<a href="#contents" class="backToContents">目次に戻る</a></h3>
+        <p>
+          　ステッピングモータはコイル、鉄心、永久磁石から成ります(図2.1.1)。
+          コイルと鉄心はモータ外装に固定されており固定子と呼ばれ、永久磁石は回転軸に接続されており回転子と呼ばれます。
+          ここで、コイルA、コイルBに図2.1.2のような同一振幅、位相差90°の2相交流電流iA、iBを流すと、コイルが磁化され図2.1.3のように電流に比例する磁界が発生します(電流が大きすぎると比例関係が成り立たなくなります)。
+          時刻t0からt8の間に合成磁界が左周りに1回転していることから、交流電流を流すと回転する磁界が生成することが分かります。
+          この回転磁界に回転子が追従することによりステッピングモータは回転します。
+          また、交流電流の周波数を大きくすると図2.1.3の遷移が素早くなり、回転速度が大きくなります。
+          さらに、交流電流の振幅を大きくすると磁界が大きくなり、回転子がより強力に引き付けられます。
+          その結果としてトルクが大きくなります。
+        </p>
+        <div class="points">
+          要点
+          <ul>
+            <li>ステッピングモータは位相差90°の交流(2相交流)で動く</li>
+            <li>周波数を大きくすると、それに比例して回転速度も大きくなる</li>
+            <li>振幅を大きくすると、トルクも大きくなる</li>
+          </ul>
+        </div>
+        <div class="sideBySidePictures">
+          <figure>
+            <img src="pictures/chapter2/図2.1.1..png" height="200" alt="">
+            <figcaption>図2.1.1. ステッピングモータの構造</figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.2..png" height="200" alt="">
+            <figcaption>図2.1.2. 2相交流</figcaption>
+          </figure>
+        </div>
+        <div class="sideBySidePictures">
+          <figure>
+            <img src="pictures/chapter2/図2.1.6.(3).png" width="300">
+            <figcaption>時刻t<sub>3</sub></figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.5.(2).png" width="300">
+            <figcaption>時刻t<sub>2</sub></figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.4.(1).png" width="300">
+            <figcaption>時刻t<sub>1</sub></figcaption>
+          </figure>
+        </div>
+        <div class="sideBySidePictures">
+          <figure>
+            <img src="pictures/chapter2/図2.1.7.(4).png" width="300">
+            <figcaption>時刻t<sub>4</sub></figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.11..png" width="300">
+            <figcaption></figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.3.(0).png" width="300">
+            <figcaption>時刻t<sub>0</sub>, t<sub>8</sub></figcaption>
+          </figure>
+        </div>
+        <div class="sideBySidePictures">
+          <figure>
+            <img src="pictures/chapter2/図2.1.8.(5).png" width="300">
+            <figcaption>時刻t<sub>5</sub></figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.9.(6).png" width="300">
+            <figcaption>時刻t<sub>6</sub></figcaption>
+          </figure>
+          <figure>
+            <img src="pictures/chapter2/図2.1.10.(7).png" width="300">
+            <figcaption>時刻t<sub>7</sub></figcaption>
+          </figure>
+        </div>
+        <p id="figcaption2-1-3">図2.1.3. 回転磁界の発生</p>
+      </section>
+
+      <section id="chapter2-2">
+        <h3 class="headingTypeB">2.2 インバータ<sup>[2][3]</sup>　<a href="#contents" class="backToContents">目次に戻る</a></h3>
+        <p>
+          　インバータは直流を交流に変換する装置であり、その基本回路は図2.2.1のように直流電源と4つのトランジスタ(電気的スイッチ)からなります。
+          トランジスタのON/OFFを次のように切り替えることにより、直流電圧Eから3種類の出力電圧vが得られます。
+        </p>
+        <p>
+          T1, T2, T3, T4　が　それぞれON, OFF, OFF, ON　ならば　v = +E<br>
+          T1, T2, T3, T4　が　それぞれOFF, ON, OFF, ON　ならば　v = 0<br>
+          T1, T2, T3, T4　が　それぞれOFF, ON, ON, OFF　ならば　v = -E<br>
+          (これら以外のON/OFFの組み合わせは現時点では考えないこととします)
+        </p>
+        <figure>
+          <img src="pictures/chapter2/図2.2.1..png" width="360" alt="">
+          <figcaption>図2.2.1 インバータの基本回路</figcaption>
+        </figure>
+        <p>
+          3種類の出力電圧vを適切に切り替えることで図2.1.2.のような交流を表現することを考えます<a href="#note1" id="jumpToNote1Button">*1</a>。
+          適切な切り替え方はいろいろありますが、今回は正弦波と三角波の大小を比較する方法をとりました。
+          所望する正弦波を<span class="standardWave">基準正弦波</span>
+          、それを－1倍した正弦波を<span class="reverseWave">反転正弦波</span>
+          、三角波はそのまま<span class="triangleWave">三角波</span>
+          と呼ぶことにし、<span class="standardWave">基準正弦波</span>
+          を<span class="standardWave">vs</span>(s: standard, sine)、
+          <span class="triangleWave">三角波</span>を<span class="triangleWave">vt</span>(t:
+          triangle)として式2.2.1.、式2.2.2.で定めます。
+          tは時刻、VsとVtは振幅、fsとftは周波数を表します。<br>
+          tri( )は-cos( )の最大値と最小値を直線でつないだ関数であり、式2.2.3.で表わされます。
+          これらの式を図示すると図2.2.2.上段のようになります。
+        </p>
+        <p class="standardWave">
+          \[v_s(t) = V_s\sin(2πf_st)　　　(式2.2.1.)\]
+        </p>
+        <p class="triangleWave">
+          \[v_t(t) = V_t\text{tri}(2πf_tt)　　　(式2.2.2.)\]
+        </p>
+        \[\text{tri}(2πf_tt) = -\dfrac{2}{π}\sin^{-1}(\cos(2πf_tt))　　　(式2.2.3.)\]
+        <p>
+
+        </p>
+        <p>ここで、出力電圧vを</p>
+        <p>
+          <span class="standardWave">vs</span> > <span class="triangleWave">vt</span> > <span
+            class="reverseWave">-vs</span> ならば v = +E<br>
+          <span class="standardWave">vs</span> &lt; <span class="triangleWave">vt</span> &lt; <span
+            class="reverseWave">-vs</span> ならば v = -E<br>
+          それら以外 ならば v = 0
+        </p>
+        <p>
+          のように定めると、出力電圧vは図2.2.2下段のようになります。
+          <span class="standardWave">基準正弦波vs</span>が最大値付近のときはv = +Eの時間が長く、<span class="standardWave">vs</span>が0付近のときはv
+          = 0の時間が長く、<span class="standardWave">vs</span>が最小値付近のときはv =
+          -Eの時間が長くなっていることから、この出力電圧vは確かに<span class="standardWave">基準正弦波</span>に似ていることが分かります。
+          以降この出力電圧vを<span class="outputWave">出力正弦波</span>と呼ぶことにします。
+        </p>
+        <figure>
+          <img src="pictures/chapter2/図2.2.2..png" width="500" alt="">
+          <figcaption>図2.2.2 正弦波と三角波の比較</figcaption>
+        </figure>
+        <p>
+          　Vs/Vtの値が大きいほど<span class="outputWave">出力正弦波</span>の平均値(vが+Eまたは-Eとなる時間の割合)が増え、これは図2.1.2.において振幅が大きくなることに対応します。
+          fsが大きくなることは図2.1.2.において周波数が大きくなることに対応します。
+          また、詳細は直後に書きますが、<span class="outputWave">出力正弦波</span>の質を保つにはfs≦ftとする必要があります。<br>
+          　<span class="standardWave">基準正弦波</span>の周波数fsはモータの回転速度や電車の速さに比例して定まり、そのfsに基づいて<span
+            class="triangleWave">三角波</span>の周波数ftを定めます。
+          ftの定め方には同期モードと非同期モードの2種類あります。<br>
+          　図2.2.2ではftはfsの3倍となっています。
+          このようにfsの整数倍となるようにftを定める方法は同期モードといい、ftがfsのn倍のとき同期nパルスといいます。
+          図2.2.2.の<span class="outputWave">出力正弦波</span>は同期3パルスとなっています。
+          nやfsが大きいほど<span class="standardWave">基準正弦波</span>1周期当たりに<span
+            class="outputWave">出力正弦波</span>が変化する回数(スイッチング周波数)が増えます。
+          これは<span class="outputWave">出力正弦波</span>がより細かく表現され質が高くなることを意味します。
+          しかし、マイコンやトランジスタの性能的にスイッチング周波数には限界があるため、電車が速くなる(fsが増加する)に伴いnを減少させることでスイッチング周波数の増加を抑制します。<br>
+          　一方、発車直後や停車直前(fsが非常に小さいとき)はnを増加させたとしてもftが非常に小さくなります。
+          その結果スイッチング周波数も非常に小さくなり、<span class="outputWave">出力正弦波</span>の質が低下します。
+          そこで、低速域ではftをfsに依存しない値(ただしft >> fs)とし、スイッチング周波数を保ちます。
+          このようなftの決め方を非同期モードといいます。
+          ただし、非同期モードのままfsが増加するとft >> fsの関係が崩れ、図2.2.3のように<span class="outputWave">出力正弦波</span>のパルスの数や幅に非対称性が目立ってきます。
+          このため、高速域において非同期モードはあまり使われません。
+        </p>
+        <figure>
+          <img src="pictures/chapter2/図2.2.3..png" width="720" alt="">
+          <figcaption>図2.2.3 高速域での非同期モード</figcaption>
+        </figure>
+
+        <p>
+          　ここまでVs、Vt、fs、ftが一定であるとしてきましたが、実際はVt以外は時刻とともに変化します。
+          そこで、式2.2.1、式2.2.2をそれぞれ式2.2.4、式2.2.5のように書き換えます。
+          ただし、ps(t)、pt(t)は位相(phase)と呼ばれ、これによりsin( )やtri( )の戻り値が決まります。
+        </p>
+        <p class="standardWave">
+          \[v_s(t) = V_s(t) \sin(2π \displaystyle\int_{0}^{t} f_s(τ) dτ) = V_s(t) \sin(p_s(t))　　　(式2.2.4.)\]
+        </p>
+        <p class="triangleWave">
+          \[v_t(t) = V_t \text{tri}(2π \displaystyle\int_{0}^{t} f_t(τ) dτ) = V_t \text{tri}(p_t(t))　　　(式2.2.5.)\]
+        </p>
+
+        <p>
+          　ここまでの話を電気回路で表現すると図2.2.4.のようになります<a href="#note2" id="jumpToNote2Button">*2</a>。
+          反転回路は<span class="standardWave">基準正弦波</span>から<span class="reverseWave">反転正弦波</span>を作り出す回路です。
+          比較回路は正弦波と三角波の大小関係に応じた信号を出力する回路です。
+          ゲートドライバは比較回路の信号を受けてトランジスタのON/OFFを切り替える回路です。
+          ゲートドライバには切り替えの際は上下にトランジスタが両方にOFFになる時間(デッドタイム)を設け、大電流が流れるのを防ぐ役割もあります。
+          正弦波生成回路と三角波生成回路の設計は難しいため、今回は図2.2.4.の点線で囲まれた部分をソフトウェアで実現させます。
+        </p>
+        <figure>
+          <img src="./pictures/chapter2/図2.2.4..png" width="400" alt="">
+          <figcaption>図2.2.4. アナログ回路による三角波比較</figcaption>
+        </figure>
+        <p>
+          　図2.2.4.の回路が生成できる交流は1相のみですが、2.1.項で述べたようにステッピングモータを駆動するには2相交流が必要です。
+          そのため、図2.2.4.の回路は2つ必要になります。
+          2つ目の回路では<span class="standardWave">基準正弦波</span>と<span
+            class="triangleWave">三角波</span>の位相を90°(π/2ラジアン)ずらす必要があり、位相をずらした式は添え字90を付けて次のようになります。
+          複号は同順であり、ステッピングモータの回転方向に対応しています。
+          また、v<sub>s</sub>(t)に対応する回路をA相、v<sub>s90</sub>(t)に対応する回路をB相と呼ぶことにします。
+        </p>
+        <p class="standardWave">
+          \[v_{s90}(t) = V_s(t) \sin(p_s(t) \pm \dfrac{π}{2})　　　(式2.2.6.)\]
+        </p>
+        <p class="triangleWave">
+          \[v_{t90}(t) = V_t \text{tri}(p_t(t) \pm \dfrac{π}{2})　　　(式2.2.7.)\]
+        </p>
+        <div class="points">
+          要点
+          <ul>
+            <li>正弦波と三角波の大小比較に基づいてスイッチングが行われ、出力正弦波が生成される</li>
+          <li>基準正弦波の振幅が大きいほど出力正弦波の平均値も大きい</li>
+          <li>正弦波と三角波の比較方法には同期モードと非同期モードがあり、高速域では前者、低速域では後者が用いられる</li>
+          <li>アナログ回路の設計は難しいので、ソフトウェアを利用する</li>
+          </ul>
+        </div>
+      </section>
+    </section>
+
+    <section id="chapter3">
+      <h2 class="headingTypeA">3 ソフトウェア　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+
+      <section id="chapter3-1">
+        <h3 class="headingTypeB">3.1 ソースコード全体　<a href="#contents" class="backToContents">目次に戻る</a></h3>
+        <p>
+          　arduinoIDEで作成したソースコード全体です。
+          金色の文字をクリックすると次項の解説にジャンプします。
+        </p>
+        <pre>
+          <code>
+            #include "hal/gpio_ll.h"                      <div class="comment">//これがないとGPIO.out部分でコンパイルエラーが出る。<a href="#chapter3-2-8">3.2.8. digitalWriteの高速化</a></div>
+            <div class="comment">//3.2.1. 変数や定数の定義</div>
+            const uint8_t AIN1 = 13;                      <div class="comment">//TB6612のAIN1ピンに接続するピンの番号</div>
+            const uint8_t AIN2 = 14;                      <div class="comment">//TB6612のAIN2ピンに接続するピンの番号</div>
+            const uint8_t BIN1 = 16;                      <div class="comment">//TB6612のBIN1ピンに接続するピンの番号</div>
+            const uint8_t BIN2 = 17;                      <div class="comment">//TB6612のBIN2ピンに接続するピンの番号</div>
+            const uint8_t STBY = 18;                      <div class="comment">//TB6612をスタンバイモードにするためのピンの番号</div>
+            const uint8_t ACCEL_PIN = 35;                 <div class="comment">//可変抵抗につなぐピンの番号</div>
+            
+            const uint8_t STEP = 5;                       <div class="comment">//ステッピングモータが1回転するのに必要な正弦波の数</div>
+            const uint8_t WHEEL_GEAR = 58;                <div class="comment">//輪軸の歯車の歯数</div>
+            const uint8_t MOTOR_GEAR = 27;                <div class="comment">//モータの歯車の歯数</div>
+            const uint16_t WHEEL_DIA = 860;               <div class="comment">//車輪の直径[mm]</div>
+            <div class="comment">//↓速さspeedから正弦波周波数fsを計算するための定数</div>
+            const uint32_t FREQ_COEF = round(1024.0 * 1000 / (WHEEL_DIA * PI) * WHEEL_GEAR / MOTOR_GEAR * STEP);
+
+            const uint8_t ASYNC = 0;                      <div class="comment">//非同期モードを表す定数</div>
+            const uint32_t ASYNC_FREQ = 800 * 1024;      <div class="comment">//非同期モードにおける三角波周波数[mHz]　1563Hz以上だとオーバーフローが起こる</div>
+            const uint8_t SYNC1 = 21;                     <div class="comment">//同期モード1を表す定数 兼 同期モード1のパルス数</div>
+            const uint8_t SYNC2 = 11;                     <div class="comment">//同期モード2を表す定数 兼 同期モード2のパルス数</div>
+            <div class="comment">//↓非同期モードと同期モード1を切り替える速さ[µm/s]　0～S12の範囲で自由に決められる</div>
+            const uint32_t S01 = PI * ASYNC_FREQ / SYNC1 / STEP * MOTOR_GEAR / WHEEL_GEAR * WHEEL_DIA / 1000 * 1024;
+            const uint32_t S12 = 18.5 * 1024 * 1024;        <div class="comment">//同期モード1と同期モード2を切り替える速さ[µm/s]</div>
+            const uint32_t SPEED_MAX = 32 * 1024 * 1024;  <div class="comment">//最高速度[µm/s]</div>
+            int32_t speed = 0;                            <div class="comment">//電車の速さ[µm/s]</div>
+            
+            <div class="comment">//<a href="#chapter3-2-2">3.2.2. 正弦波関数と三角波関数の取り扱い</a></div>
+            const uint8_t TIMER_PERIOD = 20;              <div class="comment">//タイマー割込みの周期[µs]。式2.2.4.、式2.2.5.のdτに相当する</div>
+            const uint32_t MAX_PHASE = 512 * 1024;        <div class="comment">//位相の最大値。式2.2.4.、式2.2.5.の2πに相当する</div>
+            <div class="comment">//↓正弦波や三角波の周波数から位相増分を計算するための係数[ms]。2πdτに相当する</div>
+            const uint32_t PHASE_COEF = round(1.024 * TIMER_PERIOD * MAX_PHASE / 1000.0);
+            const uint32_t TABLE_NUMBER = 16 * 1024;      <div class="comment">//SIN[ ]やTRI[ ]の要素の個数</div>
+            const uint8_t NUMBER_COEF = MAX_PHASE / TABLE_NUMBER;  <div class="comment">//位相から要素番号を計算するための数</div>
+            const int16_t TABLE_AMP = 32767;              <div class="comment">//SIN[ ]やTRI[ ]の要素の最大値</div>
+            int16_t SIN[TABLE_NUMBER];
+            int16_t TRI[TABLE_NUMBER];
+            
+            <div class="comment">//以下3変数はシリアルモニタに表示させるためにグローバル変数としている</div>
+            uint8_t Vs;                               <div class="comment">//出力正弦波の平均値にほぼ比例する変数　式2.2.4のVs(t)に対応</div>
+            uint32_t fs;                              <div class="comment">//正弦波周波数[mHz]　式2.2.4のfs(t)に対応</div>
+            uint32_t ft;                              <div class="comment">//三角波周波数[mHz]　式2.2.5のft(t)に対応</div>
+            const uint8_t Vt = 128;                   <div class="comment">//式2.2.5のVtに対応</div>
+            const uint8_t VS_MIN = round(0.15 * Vt);  <div class="comment">//Vsの最小値。<a href="#chapter3-2-3">3.2.3. 正弦波振幅とトルクのコントロール</a></div>
+            const uint8_t VS_MAX = round(0.7 * Vt);   <div class="comment">//Vsの最大値。<a href="#chapter3-2-3">3.2.3. 正弦波振幅とトルクのコントロール</a></div>
+            
+            hw_timer_t* VVVF_timer = NULL;   <div class="comment">//タイマー割込みの設定 <a href="#chapter3-2-4">3.2.4. タイマー割込みについて</a></div>
+            void IRAM_ATTR onVVVF_Timer() {  <div class="comment">//タイマー割込みで行う処理 <a href="#chapter3-2-4">3.2.4. タイマー割込みについて</a></div>
+              if (speed > 0) {
+                <div class="comment">//正弦波周波数と三角波周波数を計算</div>
+                static uint8_t mode;  <div class="comment">//ASYNC、SYNC1、SYNC2のうちいずれかの値をとる変数</div>
+                <div class="comment">//↓[mHz] 速さから正弦波周波数を計算する。オーバーフローを避けるため先に2^5で割り、後から2^15で割る</div>
+                fs = (speed >> 5) * FREQ_COEF >> 15;
+                if (mode == ASYNC) {
+                  ft = ASYNC_FREQ;  <div class="comment">//[mHz] ASYNC_FREQにrandom(-40000, 0)を足しても非同期音は濁らなかった</div>
+                } else {
+                  ft = fs * mode;  <div class="comment">//[mHz]</div>
+                }
+            
+                <div class="comment">//正弦波位相を計算</div>
+                static uint32_t ps;               <div class="comment">//ps(t)に相当する変数</div>
+                ps += fs / 4 * PHASE_COEF >> 18;  <div class="comment">//オーバーフローを避けるため先に4で割り、後から2^18で割る</div>
+                ps = ps & (MAX_PHASE - 1);        <div class="comment">//位相を0～MAX_PHASE－1の範囲に収める。<a href="#chapter3-2-5">3.2.5. 余りを高速で求める</a></div>
+            
+                <div class="comment">//<a href="#chapter3-2-6">3.2.6. 非同期モード、同期モードの切り替え</a></div>
+                static uint32_t pre_ps;
+                static uint32_t pt;                 <div class="comment">//式2.2.5.のpt(t)に相当する変数</div>
+                if (ps >= pre_ps) {                 <div class="comment">//正弦波の位相が増加しているときは三角波位相の計算を行う</div>
+                  pt += ft / 4 * PHASE_COEF >> 18;  <div class="comment">//オーバーフローを避けるため先に4で割り、後から2^18で割る</div>
+                  pt = pt & (MAX_PHASE - 1);        <div class="comment">//位相を0～MAX_PHASE－1の範囲に収める、<a href="#chapter3-2-5">3.2.5. 余りを高速で求める</a></div>
+                } else {                            <div class="comment">//正弦波の位相が0に戻ったら</div>
+                  if (speed &lt; S01) {
+                    mode = ASYNC;
+                  } else if (speed &lt; S12) {
+                    mode = SYNC1;
+                    pt = ps * mode;  <div class="comment">//同期モードのときは位相をそろえる</div>
+                  } else {
+                    mode = SYNC2;
+                    pt = ps * mode;  <div class="comment">//同期モードのときは位相をそろえる</div>
+                  }
+                }
+                pre_ps = ps;  <div class="comment">//pre_psの更新を忘れないように</div>
+            
+                <div class="comment">//位相を90°ずらした正弦波位相と三角波位相を計算</div>
+                uint32_t ps_90 = ps + MAX_PHASE / 4;  <div class="comment">//式2.2.6.のps(t) + π/2に相当する変数</div>
+                ps_90 = ps_90 & (MAX_PHASE - 1);      <div class="comment">//位相を0～MAX_PHASE－1の範囲に収める。<a href="#chapter3-2-5">3.2.5. 余りを高速で求める</a></div>
+                uint32_t pt_90 = pt + MAX_PHASE / 4;  <div class="comment">//式2.2.7.のpt(t) + π/2に相当する変数</div>
+                pt_90 = pt_90 & (MAX_PHASE - 1);      <div class="comment">//位相を0～MAX_PHASE－1の範囲に収める。<a href="#chapter3-2-5">3.2.5. 余りを高速で求める</a></div>
+            
+                <div class="comment">//正弦波振幅を計算　<a href="#chapter3-2-3">3.2.3. 正弦波振幅とトルクのコントロール</a></div>
+                Vs = VS_MIN + (VS_MAX - VS_MIN + 1) * speed / SPEED_MAX;
+            
+                <div class="comment">//正弦波と三角波の値を計算</div>
+                int32_t vs = SIN[ps / NUMBER_COEF] * Vs;            <div class="comment">//式2.2.4に対応</div>
+                int32_t vt = TRI[pt / NUMBER_COEF] * Vt;        <div class="comment">//式2.2.5に対応</div>
+                int32_t vs_90 = SIN[ps_90 / NUMBER_COEF] * Vs;      <div class="comment">//式2.2.6.に対応</div>
+                int32_t vt_90 = TRI[pt_90 / NUMBER_COEF] * Vt;  <div class="comment">//式2.2.7.に対応</div>
+            
+                <div class="comment">//↓<a href="#chapter3-2-7">3.2.7. 正弦波と三角波の大小比較とスイッチング</a>　<a href="#chapter3-2-8">3.2.8. digitalWriteの高速化</a>　<a href="#table4-2-1">表4.2.1.</a>　を参照する</div>
+                if (vs > vt && vt > -vs) {  <div class="comment">//A相正回転</div>
+                  if (vs_90 > vt_90 && vt_90 > -vs_90) {  <div class="comment">//B相正回転</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN2);
+                  } else if (vs_90 &lt; vt_90 && vt_90 &lt; -vs_90) { <div class="comment">//B相逆回転</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN2) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1);
+                  } else {  <div class="comment">//B相ショートブレーキ</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; BIN2) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; AIN2);
+                  }
+                } else if (vs &lt; vt && vt &lt; -vs) { <div class="comment">//A相逆回転</div>
+                  if (vs_90 > vt_90 && vt_90 > -vs_90) {  <div class="comment">//B相正回転</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN2);
+                  } else if (vs_90 &lt; vt_90 && vt_90 &lt; -vs_90) {  <div class="comment">//B相逆回転</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN2) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN1);
+                  } else {  <div class="comment">//B相ショートブレーキ</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; BIN2) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; AIN1);
+                  }
+                } else {  <div class="comment">//A相ショートブレーキ</div>
+                  if (vs_90 > vt_90 && vt_90 > -vs_90) {  <div class="comment">//B相正回転</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; BIN2);
+                  } else if (vs_90 &lt; vt_90 && vt_90 &lt; -vs_90) {  <div class="comment">//B相逆回転</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN2) + (1 &lt;&lt; STBY);
+                    GPIO.out_w1tc = (1 &lt;&lt; BIN1);
+                  } else {  <div class="comment">//B相ショートブレーキ</div>
+                    GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; BIN2) + (1 &lt;&lt; STBY);
+                  }
+                }
+              } else {                      <div class="comment">//停車時は全てのトランジスタをOFFにしてエネルギーの無駄と発熱を防ぐ</div>
+                GPIO.out_w1tc = 1 &lt;&lt; STBY;  <div class="comment">//TB6612をスタンバイモード(すべてのトランジスタをOFF)にする</div>
+                Vs = 0;                     <div class="comment">//シリアルモニタに表示するための処理</div>
+                ft = 0;                     <div class="comment">//シリアルモニタに表示するための処理</div>
+              }
+            }
+            
+            void setup() {
+              Serial.begin(115200);
+              pinMode(AIN1, OUTPUT);
+              pinMode(AIN2, OUTPUT);
+              pinMode(BIN1, OUTPUT);
+              pinMode(BIN2, OUTPUT);
+              pinMode(STBY, OUTPUT);
+              GPIO.out_w1tc = 1 &lt;&lt; STBY;  <div class="comment">//起動直後にTB6612をスタンバイモードにする</div>
+              pinMode(ACCEL_PIN, INPUT);
+            
+              <div class="comment">//配列SIN[ ]と配列TRI[ ]に値を代入</div>
+              for (int i = 0; i &lt; TABLE_NUMBER; i++) {
+                SIN[i] = round(TABLE_AMP * sin(2 * PI * i / TABLE_NUMBER));
+              }
+              for (int i = 0; i &lt; TABLE_NUMBER / 2; i++) {
+                TRI[i] = round(TABLE_AMP * (4.0 * i / TABLE_NUMBER - 1));
+              }
+              for (int i = TABLE_NUMBER / 2; i &lt; TABLE_NUMBER; i++) {
+                TRI[i] = round(TABLE_AMP * (-4.0 * i / TABLE_NUMBER + 3));
+              }
+            
+              <div class="comment">//タイマー割込みの設定</div>
+              VVVF_timer = timerBegin(1000000);  <div class="comment">//1秒間に1×10^6回カウンタが進む</div>
+              timerAttachInterrupt(VVVF_timer, &onVVVF_Timer);
+              <div class="comment">//↓カウンタがTIMER_PERIOD回進むごとにIRAM_ATTR onVVVF_Timer()が実行される。つまり割り込みの周波数[Hz]は1000000 / TIMER_PERIOD</div>
+              timerAlarm(VVVF_timer, TIMER_PERIOD, true, 0);
+            }
+            
+            void loop() {
+              static uint16_t pre_millis;                  <div class="comment">//最後にif内の処理を行った時間を記録しておく変数</div>
+              if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処理から10ms以上経過したら処理を行う</div>
+                pre_millis = millis();                     <div class="comment">//最後にif内の処理を行った時間を記録</div>
+                int16_t read = analogRead(ACCEL_PIN) - 2048;
+                if (read > 100) {
+                  read = read - 100;
+                } else if (read &lt; -100) {
+                  read = read + 100;
+                } else {  <div class="comment">//不感帯</div>
+                  read = 0;
+                }
+                speed += read * 5;  <div class="comment">//可変抵抗の電圧を読み取って加速度に換算</div>
+                if (speed &lt; 0) {
+                  speed = 0;  <div class="comment">//最低速度を0m/sに制限</div>
+                } else if (SPEED_MAX &lt; speed) {
+                  speed = SPEED_MAX;  <div class="comment">//最高速度をSPEED_MAXに制限</div>
+                }
+                Serial.printf(" read   speed     Vs/Vt     fs       ft  \n");
+                Serial.printf("%5d", read);                                <div class="comment">//可変抵抗の読み取り値を表示</div>
+                Serial.printf("%6.1f km/h  ", speed * 3.6 / 1024 / 1024);  <div class="comment">//速さを表示</div>
+                Serial.printf("%3.0f %%  ", 100.0 * Vs / Vt);              <div class="comment">//正弦波振幅を表示</div>
+                Serial.printf("%4d Hz  ", fs / 1024);                      <div class="comment">//正弦波周波数を表示</div>
+                Serial.printf("%4d Hz\n", ft / 1024);                      <div class="comment">//三角波周波数を表示</div>
+              }
+            }
+          </code>
+        </pre>
+      </section>
+
+      <section id="chapter3-2">
+        <h3 class="headingTypeB">3.2 ソースコード解説　<a href="#contents" class="backToContents">目次に戻る</a></h3>
+        <section id="chapter3-2-1">
+          <h4 class="headingTypeC">3.2.1. 定数や変数の定義</h4>
+          <p>
+            　このソースコードでは「k」、「m」、「µ」をそれぞれ2<sup>10</sup>、2<sup>-10</sup>、2<sup>-20</sup>を表す接頭辞とします。
+            これに伴い、単位換算の際は10の累乗の代わりに2の累乗で乗除算を行います。
+            なぜなら、2の累乗の乗除算は比較的高速で行えるためです。
+            ただし、20行目の定数TIMER_PERIODの単位µsには通常通り10<sup>-6</sup>を表す接頭辞µを用いています。
+            変数や定数を全て整数型で定義し、float型やdouble型を一切用いていません。
+            これも演算を高速化するためです。<br>
+            　速度を出しすぎるとモータや歯車に負担がかかったり、変数がオーバーフローしたりします。
+            これを防ぐため、速度の上限を定めます。<br>
+            　図2.1.1.のステッピングモータは正弦波1周期分の電流を流すと1回転します。
+            しかし、実際のステッピングモータは図2.1.1.よりも複雑な構造をしており、今回用いたモータは正弦波5周期分の電流を流すと1回転します。
+            これを考慮するため定数STEPを定義しています。<br>
+            　まず速さspeedを決め、それに基づき正弦波周波数fsを計算します。その際に用いる比例定数は車輪直径やギア比から計算します。
+            比例定数の計算を毎回行うと時間がかかるので、先に計算して定数FREQ_COEF(FREQ: frequency, COEF: coefficient)に格納しておきます。
+          </p>
+        </section>
+
+        <section id="chapter3-2-2">
+          <h4 class="headingTypeC">3.2.2. 正弦波関数と三角波関数の取り扱い</h4>
+          <p>
+            　式2.2.4.、式2.2.5.に登場した関数sin(p<sub>s</sub>(t))や関数tri(p<sub>t</sub>(t))では、位相p<sub>s</sub>(t)、p<sub>t</sub>(t)の範囲が0
+            ～ 2π、戻り値の範囲が－1 ～ 1となっています(図3.2.3.1.)。
+            これを整数で扱おうとすると位相は0 ～ 6の7種類、戻り値は-1、0、1の3種類にしかならず精度が壊滅的になります。
+            そのため、このソースコードでは関数sin( )、tri( )に対応する配列SIN[ ]、TRI[ ]の範囲を－TABLE_AMP ～
+            TABLE_AMPとし、要素数をTABLE_NUMBERとしています(図3.2.3.2.)。
+            また、位相ps、ptの範囲を0 ～ MAX_PHASE－1としています。
+            TABLE_AMP、TABLE_NUMBER、MAX_PHASEはいずれも大きい方が精度が高くなりますが、様々な制約があります。
+            まず、TABLE_AMPとTABLE_NUMBERが大きすぎるとマイコンのメモリが不足します。
+            このため、配列の要素をint32_t型ではなくint16_t型(最大値が小さいのでメモリを圧迫しにくい)で定義し、要素数TABLE_NUMBERを2<sup>14</sup>まで増やしました。
+            それに伴い、TABLE_AMPをint16_t型の最大値である2^15-1にしました。
+            次に、MAX_PHASEが大きすぎるとオーバーフローが起こります。
+            一方、MAX_PHASEが小さいとPHASE_COEFも小さくなり、低速域における計算の誤差が大きくなって同期モードにおけるVVVF音が階段状になります。
+            よって、MAX_PHASEをオーバーフローしない程度に大きな2<sup>19</sup>としました。
+            配列SIN[ ]やTRI[ ]を用いる計算の際は、位相を定数NUMBER_COEFで割ります。
+            これは、最大値がMAX_PHASE－1である位相をそのまま要素番号とすると要素番号が0 ～ TABLE_NUMBER－1の範囲を逸脱し、マイコンがクラッシュするためです。
+          </p>
+          <div class="sideBySidePictures">
+            <figure>
+              <img src="pictures/chapter3/図3.2.3.1..png" height="200" alt="">
+              <figcaption>図3.2.2.1. 関数sin( ), tri( )の引数と戻り値の範囲</figcaption>
+            </figure>
+            <figure>
+              <img src="pictures/chapter3/図3.2.3.2..png" height="200" alt="">
+              <figcaption>図3.2.2.2. 配列SIN[ ], TRI[ ]の要素番号と要素の範囲</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section id="chapter3-2-3">
+
+          <h4 class="headingTypeC">3.2.3. 正弦波振幅とトルクのコントロール</h4>
+          <p>
+            　正弦波の振幅Vsを一定にした場合、高速域において回転磁界に回転子が追従しにくくなり、ついには停止します(この現象を脱調といいます)。
+            これを防ぐため、正弦波周波数fsの増加とともに正弦波振幅Vsも増加させます。
+          </p>
+        </section>
+
+        <section id="chapter3-2-4">
+          <h4 class="headingTypeC">3.2.4. タイマー割込みについて</h4>
+          <p>
+            　void IRAM_ATTR onVVVF_Timer()と書かれた処理がメインになります。
+            この処理は正確な周期で、かつ高速に行う必要があるため、タイマー割込みを利用しています。
+            タイマー割込みの記述方法については<a href="https://lang-ship.com/blog/work/esp32-timer/">こちら</a>を参照しました。
+          </p>
+        </section>
+
+        <section id="chapter3-2-5">
+          <h4 class="headingTypeC">3.2.5. 余りを高速に求める</h4>
+          <p>
+            　通常、aをbで割った余りを求める際はa % bと記述します。
+            しかし、bが2のべき乗である場合に限りa & (b – 1)と記述すると同じ結果が得られ、さらに処理に要する時間を短くすることができます。
+            a & (b - 1)はaとb - 1を2進数で表記して各ビットのAND演算を行う処理です。
+            例としてa = 53<sub>(10)</sub> = 110101<sub>(2)</sub>、b = 8<sub>(10)</sub> = 001000<sub>(2)</sub>の場合を考えます。
+            このときb - 1 = 7<sub>(10)</sub> = 000111<sub>(2)</sub>なので、a & (b – 1)の結果は000101<sub>(2)</sub> =
+            5<sub>(10)</sub>となります。
+            これはaの4bit目以降(b以上の部分)は強制的に0とし3bit目以下(b未満の部分)はそのままにしたものであり、確かにaをbで割った余りとなっていることが分かります。
+          </p>
+        </section>
+
+        <section id="chapter3-2-6">
+          <h4 class="headingTypeC">3.2.6. 非同期モード、同期モードの切り替え</h4>
+          <p>
+            　モード切り替えのタイミングは正弦波位相psが0付近に戻ったときとしています(図3.2.6.1.)。
+            なぜなら、psが0から離れているときにモードを切り替えると出力正弦波の対称性が崩れるためです(図3.2.6.2.)。
+            また、積分の誤差により同期モードにおける正弦波位相psと三角波位相ptは次第にずれていき、出力正弦波の対称性が失われます(図3.2.6.3.、図3.2.6.4.)。
+            これを防ぐため、同期モードのときは正弦波位相psが0付近に戻るごとに正弦波位相psと三角波位相ptを強制的にそろえています。
+          </p>
+          <div class="sideBySidePictures">
+            <figure>
+              <img src="pictures/chapter3/図3.2.5.1..png" height="200" alt="">
+              <figcaption>図3.2.6.1. モード切り替えの例(ps = 0で切り替え)</figcaption>
+            </figure>
+            <figure>
+              <img src="pictures/chapter3/図3.2.5.2..png" height="200" alt="">
+              <figcaption>図3.2.6.2. モード切り替えの例(ps ≠ 0で切り替え)</figcaption>
+            </figure>
+          </div>
+          <div class="sideBySidePictures">
+            <figure>
+              <img src="pictures/chapter3/図3.2.5.3..png" height="200" alt="">
+              <figcaption>図3.2.6.3. 同期モード(位相ズレなし)</figcaption>
+            </figure>
+            <figure>
+              <img src="pictures/chapter3/図3.2.5.4..png" height="200" alt="">
+              <figcaption>図3.2.6.4. 同期モード(位相ズレあり)</figcaption>
+            </figure>
+          </div>
+          <p>
+            　位相psが0に戻ったことを検出するため、前回の処理におけるpsを記録した変数pre_psを定義しています。
+            正弦波周波数fsは負にならないのでpsは時間に対して一定であるか増加します。よってps ≧ pre_psが成り立ちます。
+            ただし、psはMAX_PHASE以上になると余り演算により0付近まで減少させられ、その直後だけはps &lt; pre_psが成り立ちます(図3.2.3.5.)。
+            よってps &lt; pre_psが成立したとき位相が0に戻ったことが分かります。
+          </p>
+          <figure>
+            <img src="pictures/chapter3/図3.2.5.5..png" height="200" alt="">
+            <figcaption>図3.2.6.5. peとpre_peの時間変化</figcaption>
+          </figure>
+        </section>
+
+        <section id="chapter3-2-7">
+          <h4 class="headingTypeC">3.2.7. 正弦波と三角波の大小比較とスイッチング</h4>
+          <p>
+            　A相の出力電圧が3通り、B相の出力電圧も3通りあるので、全部で9通りのスイッチングパターンがあります。
+            ソースコードの記述量が増えるにもかかわらず、すべての大小比較を終えてからまとめてスイッチングを行っています。
+            大小比較とスイッチングを交互に行わないのは、できるだけ同時にすべてのトランジスタのON/OFFを切り替えるためです。
+          </p>
+        </section>
+
+        <section id="chapter3-2-8">
+          <h4 class="headingTypeC">3.2.8. digitalWriteの高速化</h4>
+          <p>
+            　digitalWrite(X_PIN, HIGH)やdigitalWrite(X_PIN, LOW)の処理は1つあたり500ns以上の時間を要することが判明しました。
+            そこで、前者の代わりに GPIO.out_w1ts = 1 &lt;&lt; X_PIN、後者の代わりに GPIO.out_w1tc=1 &lt;&lt;
+            X_PINと記述したところ、所要時間が50ns台になりました。
+            ただし、ソースコードに「#include "hal/gpio_ll.h" 」を記述しないとエラーが出ます。また、
+          </p>
+          <p>
+            GPIO.out_w1ts = 1 &lt;&lt; X_PIN;<br>
+            GPIO.out_w1ts = 1 &lt;&lt; Y_PIN;<br>
+            GPIO.out_w1ts = 1 &lt;&lt; Z_PIN;
+          </p>
+          <p>
+            という処理は
+          </p>
+          <p>
+            GPIO.out_wlts = (1 &lt;&lt; X_PIN) + (1 &lt;&lt; Y_PIN) + (1 &lt;&lt; Z_PIN);
+          </p>
+          <p>
+            とまとめて書くことができ、更なる高速化につながります。
+            GPIO.out_w1tcも同様にまとめ書きが可能です。
+          </p>
+        </section>
+      </section>
+    </section>
+
+    <section id="chapter4">
+      <h2 class="headingTypeA">4 ハードウェア　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+
+      <section id="chapter4-1">
+        <h3 class="headingTypeB">4.1 使ったもの　<a href="#contents" class="backToContents">目次に戻る</a></h3>
+        <p>　今回の製作で使ったものを表4.1.1に示します。</p>
+        <table id="table4-1-1">
+          <caption>表4.1.1 使ったもの</caption>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>型番</th>
+              <th>数量</th>
+              <th>コメント</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>マイコン</td>
+              <td>ESP32-DevKitC-32E</td>
+              <td>1</td>
+              <td>秋月電子販売コード115673</td>
+            </tr>
+            <tr>
+              <td>USBケーブル</td>
+              <td>ー</td>
+              <td>1</td>
+              <td>通信と充電が両方できるもの</td>
+            </tr>
+            <tr>
+              <td>モータドライバ</td>
+              <td>AE-TB6612-BO</td>
+              <td>1</td>
+              <td>
+                秋月電子商品コード116947<br>
+                ゲードライバとインバータを2組含み、さらにデッドタイム生成、過熱保護などの付加回路がついた回路。<br>
+                選定理由：手元にあったから。おそらくAE-TC78H653FTGの方が適している(こちらの方が低オン抵抗、低電圧駆動、省スペース、低価格)。
+              </td>
+            </tr>
+            <tr>
+              <td>ステッピングモータ</td>
+              <td>ー</td>
+              <td>1</td>
+              <td>千石電商管理コードEEHD-5P7G<br>ジャンパワイヤを切断して4端子にはんだ付けした。</td>
+            </tr>
+            <tr>
+              <td>直流電源</td>
+              <td>ー</td>
+              <td>1</td>
+              <td>ある程度電流を流せる15V以下の電源であれば何でもいい。今回は充電式9V電池とDC-DCコンバータ(型番：AE-LXDC55-ADJ)を組み合わせて5Vを生成した。</td>
+            </tr>
+            <tr>
+              <td>可変抵抗器</td>
+              <td>SH16K4B103L20KCCI</td>
+              <td>1</td>
+              <td>秋月電子販売コード118292</td>
+            </tr>
+            <tr>
+              <td>ツマミ(ノブ)</td>
+              <td>ABS-28</td>
+              <td>1</td>
+              <td>秋月電子販売コード100253<br>可変抵抗器に取り付けた。</td>
+            </tr>
+            <tr>
+              <td>ワニ口クリップ付きコード</td>
+              <td>ー</td>
+              <td>3~10</td>
+              <td>ワニ口になっていない方はジャンパワイヤ(オス)になっているもの。多いと何かと便利。</td>
+            </tr>
+            <tr>
+              <td>ジャンパワイヤ(オスメス)</td>
+              <td>ー</td>
+              <td>大量</td>
+              <td>秋月電子商品コード117228<br>実は使っていない(ESP32にジャンパワイヤ(オスオス)を使えるような基板を作ったので)。</td>
+            </tr>
+            <tr>
+              <td>ジャンパワイヤ(オスオス)</td>
+              <td>BBJ-65</td>
+              <td>大量</td>
+              <td>秋月電子商品コード105159</td>
+            </tr>
+            <tr>
+              <td>ブレッドボード</td>
+              <td>ー</td>
+              <td>1</td>
+              <td>試作なので。作品に組み込むときはユニバーサル基板やプリント基板を使いたい。</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="chapter4-2">
+        <h3 class="headingTypeB">4.2 回路　<a href="#contents" class="backToContents">目次に戻る</a></h3>
+        <p>
+          　制御のほとんどをマイコンが担ううえにインバータがモジュール化されているため、回路構成は図4.2.1.のように小規模で見かけ上シンプルです。
+          可変抵抗を回すと速度を調整することができます。
+          モータドライバの入力端子AIN1、AIN2、STBYへの入力電圧と出力端子AOUT1、AOUT2からの出力電圧の関係を表4.2.1.に示します。
+          B相の入出力関係はA相の入出力関係と同じなので、省略します。
+          STBY端子がLOWになるとTB6612FNGはスタンバイモードになり、モータドライバの待機電力が削減されます。
+        </p>
+        <figure>
+          <img src="pictures/chapter4/図4.1..png">
+          <figcaption>図4.2.1. 回路図</figcaption>
+        </figure>
+        <p>　</p>
+        <table id="table4-2-1">
+          <caption>表4.2.1. モータドライバの入力電圧と出力電圧(<a href="https://akizukidenshi.com/goodsaffix/TB6612FNG_datasheet_ja_20141001.pdf">TB6612FNGのデータシート</a>をもとに作成)</caption>
+          <thead>
+            <tr>
+              <th colspan="3">入力</th>
+              <!-- <th></th>
+              <th></th> -->
+              <th colspan="3">出力</th>
+              <!-- <th></th>
+              <th></th> -->
+              <th rowspan="2">ソースコードとの関連</th>
+            </tr>
+            <tr>
+              <th>STBY</th>
+              <th>AIN1</th>
+              <th>AIN2</th>
+              <th>AOUT1</th>
+              <th>AOUT2</th>
+              <th>v = AOUT1 - AOUT2</th>
+              <!-- <th></th> -->
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="4">HIGH</td>
+              <td>HIGH</td>
+              <td>HIGH</td>
+              <td>0</td>
+              <td>0</td>
+              <td>0</td>
+              <td>|vt| > |vs|</td>
+            </tr>
+            <tr>
+              <!-- <td></td> -->
+              <td>HIGH</td>
+              <td>LOW</td>
+              <td>VM</td>
+              <td>0</td>
+              <td>VM</td>
+              <td>vs > vt > -vs</td>
+            </tr>
+            <tr>
+              <!-- <td></td> -->
+              <td>LOW</td>
+              <td>HIGH</td>
+              <td>0</td>
+              <td>VM</td>
+              <td>-VM</td>
+              <td>-vs > vt > vs</td>
+            </tr>
+            <tr>
+              <!-- <td></td> -->
+              <td>LOW</td>
+              <td>LOW</td>
+              <td rowspan="2">開放</td>
+              <td rowspan="2">開放</td>
+              <td rowspan="2">ほぼ0</td>
+              <td>ー</td>
+            </tr>
+            <tr>
+              <td>LOW</td>
+              <td>HIGH / LOW</td>
+              <td>HIGH / LOW</td>
+              <!-- <td></td> -->
+              <!-- <td></td> -->
+              <!-- <td></td> -->
+              <td>speed < 0</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </section>
+
+    <section id="chapter5">
+      <h2 class="headingTypeA">5 結果　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+      <p>
+        　三角波周波数ftが800Hzで一定のときが非同期モードです。
+        三角波周波数ftが正弦波周波数fsの21倍または11倍になっているときが同期モードです。
+        また、正弦波周波数fsの増加に伴い正弦波振幅Vsが大きくなっていることが分かります。
+      </p>
+      <video preload="metadata" src="pictures/chapter5/ランダム変調なし.mp4" controls></video>
+    </section>
+
+    <section id="chapter6">
+      <h2 class="headingTypeA">6 終わりに　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+      <p>　この項目では気づいたことや今後の展望などの雑多なことを書きます。</p>
+      <section id="chapter6-1">
+        <h3 class="headingTypeB">6.1. 2種類のモータドライバ(A4988とTB6612FNG)の比較</h3>
+        <p>
+          　ステッピングモータを回す簡単な方法はA4988のようなモータドライバを使用することです。
+          A4988は最低2本の信号線(一方は回転方向、他方は回転速度を定める)でステッピングモータを回すことができます。
+          それに対しTB6612FNGを用いる制御方法は5本(STBY端子を使わないとしても4本)の信号線を必要とします。
+          しかし、A4988は出力電流(本文における出力正弦波の平均値に相当)を駆動中に変更することができません。
+          そのため、低速域でトルク過剰、高速域でトルク不足に陥りがちです。
+          加えて、A4988は出力電流(本文における出力正弦波の平均値に相当)を駆動中に変更することはしない(変更するとなると追加の信号線が必要となり、2本の信号線で制御できる強みが失われます)ため、スイッチング周波数が低くなりすぎたり高くなりすぎたりします。
+          一方、TB6612FNGを用いた場合は駆動中に出力正弦波の平均値やパルス数をある程度自由に変更できるため、プログラミング次第で最適な制御を行うことができます。
+          また、A4988は8Vほどの電源電圧を必要としますが、TB6612FNGは3.3Vでもモータを駆動することができます。
+        </p>
+      </section>
+      <section id="chapter6-2">
+        <h3 class="headingTypeB">6.2. 加速度について</h3>
+        <p>
+          　今回はVVVF制御がメインテーマであるため、加速度の制御は可変抵抗を用いてシンプルなものとしました。
+          実際の電車の加速度はマスコンからの入力だけでなく電車の速さにも依存するため、これを考慮した関数を作る必要があります。
+          また、勾配、トンネル、カーブ、乗客数などの要素も加速度に影響を与えます。
+          しかし、これらの要素は実装が難しい上にマスコンからの入力と電車の速さほどの影響力を持たないため、無視する予定です。
+        </p>
+      </section>
+      <section id="chapter6-3">
+        <h3 class="headingTypeB">6.3. 非同期音を濁らせる方法</h3>
+        <p>
+          　非同期モードにおける三角波周波数を小刻みに変化させることで、濁った非同期音を発生させることができます。
+          今回は乱数を使って三角波周波数を変動させました。
+          ただし、IRAM_ATTR onVVVF_Timer()の処理は1秒間に50000回実行されます。
+          そのため、ASYNC_FREQ を にASYNC_FREQ + random(-64, 64) * 1024に書き換えると1秒間に50000回非同期周波数が変化することになります。
+          これでは非同期周波数の変化が速すぎて濁った音が聞こえません。
+          そこで、IRAM_ATTR onVVVF_Timer()の冒頭部分を以下のように書き換えます。
+          この処理はIRAM_ATTR onVVVF_Timer()が128回実行されるうちに非同期周波数を2回変化させるものです。
+          これにより1秒間に781回非同期周波数が変化することになり、濁った音が聞こえます。
+        </p>
+        <pre>
+          <code>
+            void IRAM_ATTR onVVVF_Timer() {  <div class="comment">//タイマー割込みで行う処理 3.2.4. タイマー割込みについて</div>
+              static uint8_t count;
+              count += 1;  <div class="comment">//countを0～127の範囲で変化させる</div>
+              if (speed > 0) {
+                //正弦波周波数と三角波周波数を計算
+                static uint8_t mode;                  <div class="comment">//ASYNC、SYNC1、SYNC2のうちいずれかの値をとる変数</div>
+                <div class="comment">//↓ [mHz] 速さから正弦波周波数を計算する。オーバーフローを避けるため先に2^5で割り、後から2^15で割る</div>
+                fs = (speed >> 5) * FREQ_COEF >> 15;
+                if (mode == ASYNC) {
+                  static int8_t rand;
+                  if ((count & 63) == 0) {   <div class="comment">//countを64で割った余りが0ならば、つまりcountが0か63ならば</div>
+                    rand = random(-64 , 64);  <div class="comment">//非同期周波数を-64Hz～63Hzの範囲で拡散させる</div>
+                  }
+                  ft = ASYNC_FREQ + rand * 1024;  <div class="comment">//[mHz]</div>
+                } else {
+                  ft = fs * mode;  <div class="comment">//[mHz]</div>
+                }
+
+                <div class="comment">//正弦波位相を計算</div>
+              ：
+              ：
+              ：
+          </code>
+        </pre>
+        <video preload="metadata" src="pictures/chapter6/ランダム変調あり.mp4" controls></video>
+      </section>
+      <section id="chapter6-4">
+        <h3 class="headingTypeB">6.4. コギングトルク</h3>
+        <p>
+          　2.1.項では、図2.1.3.において鉄心と回転子の間にはたらく吸引力を考慮しませんでした。
+          このため、正弦波交流電流を流すと回転子は滑らかに回転しました。
+          しかし、実際はこの吸引力により回転子が脈動し、騒音や振動が発生します。
+          吸引力を相殺して滑らかな回転を得るためには、純粋な正弦波交流ではなく少しひずんだ交流が必要になります。
+          <!-- 詳細は<a>別の記事</a>に書きましたのでこちらをご覧ください。 -->
+        </p>
+      </section>
+    </section>
+
+    <aside>
+      <div class="notes">
+        <h4 class="headingTypeC">注釈</h2>
+          <ul>
+            <li id="note1">
+              　話が電流から電圧にすり替わっていますが、あまり細かく考えなければ電流は電圧に比例すると考えられるので問題ないと思います。<a href="#jumpToNote1Button">↑本文に戻る</a>
+            </li>
+            <li id="note2">
+              　正弦波出力を得るために正弦波発生回路を用いるなら、それで直接モータを駆動すればよいのに、どうして+E、0、-Eの3値に変換する必要があるのでしょうか。
+              これは、エネルギー効率が関係しています[4]。<br>
+              　インバータに用いられるトランジスタは、理想的にはONのとき抵抗0、OFFのときに抵抗無限大としてふるまい、しかもONとOFFの切り替えを瞬時に行えます。
+              そのため、理想的にはエネルギー損失がありません。
+              その代わり、トランジスタが抵抗0または抵抗無限大という飛び飛びな状態をとるので、出力正弦波vも+E、0、-Eという飛び飛びの値しかとれません。<br>
+              　一方で正弦波発生回路は滑らかな正弦波を発生させるため、中のトランジスタはONとOFFの中間領域で動作しなくてはならず、中途半端な抵抗としてふるまいます。
+              よって正弦波発生回路を直接モータの駆動に用いると、トランジスタの発熱が大きくエネルギー効率が悪くなります。<a href="#jumpToNote2Button">↑本文に戻る</a>
+            </li>
+          </ul>
+      </div>
+
+      <div class="credits">
+        <h4 class="headingTypeC">参考文献</h2>
+          <ul>
+            <li>
+              <a href="https://www.monolithicpower.com/jp/learning/resources/stepper-motors-basics-types-uses">"ステッピングモータの基本:
+                タイプ、用途、および動作原理"</a>
+              <!-- (閲覧日2024/09/11) -->
+            </li>
+            <li>赤津観,"徹底図解 パワーエレクトロニクス," ナツメ社, 2022</li>
+            <li>日本鉄道車両機械技術協会,“鉄道電気車両 主回路シリーズ 1 主回路電力変換装置 ーインバータ・コンバーター,” 日本鉄道車両機械技術協会, 2010</li>
+            <li>堀孝正,"新インターユニバーシティ パワーエレクトロニクス," オーム社, 2008</li>
+          </ul>
+      </div>
+    </aside>
+
+    <a class="backToTop" href="#top">ページ上部に戻る</a>
+  </article>
+
+  <footer>
+    <script>commonFooter();</script>
+  </footer>
+</body>
+
+</html>
