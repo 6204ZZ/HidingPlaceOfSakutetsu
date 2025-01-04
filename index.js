@@ -1,5 +1,7 @@
 window.onload = init;
 function init() {
+    let bodyID = document.getElementById('body');
+    let controllerID = document.getElementById('controller');
     let notchID = document.getElementById('notchIndicator');
     let buttonID = [];
     const NOTCH = 4; //ノッチ段数(力行制動共通)
@@ -42,6 +44,13 @@ function init() {
     }
     function friction(angularVelocity) { //角速度によらず一定な抵抗 [deg/s^2]、角速度に比例する抵抗の係数 [/s]、角速度の2乗に比例する抵抗の係数 [/deg]
         return 10 + 0 * angularVelocity + 0.00000134 * angularVelocity ** 2;
+    }
+
+    controllerID.onmouseover = function () {
+        bodyID.classList.add('noScroll');
+    }
+    controllerID.onmouseout = function () {
+        bodyID.classList.remove('noScroll');
     }
 
     buttonID[0].onmouseover = function () {
