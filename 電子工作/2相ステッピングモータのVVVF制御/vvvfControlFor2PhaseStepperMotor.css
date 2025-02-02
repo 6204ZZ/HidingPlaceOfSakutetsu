@@ -59,6 +59,10 @@ article .outputWave {
     font-weight: bold;
 }
 
+article pre {
+    background-color: #202020;
+    padding-left: 20px;
+}
 article pre code .comment {
     color: #808080;
     display: inline;
