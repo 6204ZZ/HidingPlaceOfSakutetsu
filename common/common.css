@@ -30,7 +30,7 @@ header .glovalNavi ul li {
     padding: 0 0;
     box-sizing: border-box;
     text-align: center;
-    font-size: 21px;
+    font-size: 23px;
 }
 header .glovalNavi ul li:last-child {
     border-right: solid 3px #FFD966;
@@ -49,7 +49,7 @@ header .glovalNavi ul li.current a*/ {
 }
 
 .topicPath {
-    font-size: 21px;
+    font-size: 23px;
     margin-top: 10px;
 }
 .topicPath a,
@@ -63,7 +63,7 @@ article a:hover {
 
 body {
     width: 960px;
-    font-size: 13px;
+    font-size: 16px;
     line-height: 1.5;
     background-color: #111111;
     color: #EEEEEE;
@@ -73,17 +73,16 @@ article section {
     margin-bottom: 50px;
 }
 h1 {
-    font-size: 21px;
+    font-size: 32px;
     margin-bottom: 0;
 }
 h2 {
-    font-size: 17px;
-    margin-top: 7px;
+    font-size: 23px;
+    margin-top: 6px;
     margin-bottom: 0;
 }
 h3 {
-    font-size: 13px;
-    margin-top: 7px;
+    margin-top: 6px;
     margin-bottom: 0;
 }
 h4 {
