@@ -1,12 +1,11 @@
 article .pageTitle {
     width: fit-content; /*タイトルの長さに枠の横幅を合わせる。inline-blockを使うとmargin autoが効かない*/
-    /* font-size: 34px; */
     color: #FFD966;
     border: solid 5px #FFD966;
     border-radius: 7px;
     text-align: center;
     padding: 5px 15px 0px 15px;
-    margin: 45px auto 0 auto;
+    margin: 45px auto 45px auto;
 }
 
 article #contents ul li {
@@ -15,23 +14,17 @@ article #contents ul li {
 
 article h2 {
     border-bottom: solid 3px #EEEEEE;
-}
-article h2 .backToContents {
-    display: inline;
-    font-size: 13px;
+    color: #FFD966;
 }
 
 article h3 {
     border-left: solid 3px #EEEEEE;
     padding-left: 5px;
+    color: #FFD966;
 }
-article h3 .backToContents {
-    font-size: 13px;
+article h4 {
+    color: #FFD966;
 }
-
-/* article h4 {
-    font-size: 13px;
-} */
 
 article section {
     margin-bottom: 30px;
@@ -39,7 +32,6 @@ article section {
 
 article .points ul {
     margin-top: 0;
-    /* background-color: red; */
 }
 
 article .standardWave {
@@ -106,7 +98,8 @@ article figure figcaption {
     /* background-color: green; */
 }
 
-article #chapter4-2 figure img {
+article #chapter4-2 figure img,
+article #chapter4-3 figure img {
     width: 100%;
 }
 
@@ -127,7 +120,7 @@ article #figcaption2-1-3 {
 
 article aside {
     padding: 10px;
-    border: solid 1px #EEEEEE;
+    border: solid 3px #EEEEEE;
     margin-bottom: 10px;
 }
 article aside .notes ul li:nth-child(1) {

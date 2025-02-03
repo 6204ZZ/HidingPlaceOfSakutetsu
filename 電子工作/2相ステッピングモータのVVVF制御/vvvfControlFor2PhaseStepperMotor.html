@@ -11,6 +11,7 @@
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <script src="../../common/commonHeaderAndFooter.js"></script>
   <script src="../../common/foldingContents.js"></script>
+  <script src="../../common/backToTopButton.js"></script>
   <meta name="robots" content="noindex">
 </head>
 
@@ -26,7 +27,7 @@
   <article>
     <h1 class="pageTitle">2相ステッピングモータのVVVF制御</h1>
 
-    <section id="contents">
+    <!-- <section id="contents">
       <h2 class="headingTypeA">目次</h2>
       <ul>
         <li>1 <a href="#chapter1">経緯・動機</a></li>
@@ -63,12 +64,15 @@
           </ul>
         </li>
       </ul>
-    </section>
+    </section> -->
 
     <section id="chapter1">
-      <h2 class="headingTypeA">1 経緯・動機　<a href="#contents" class="backToContents">目次に戻る</a>
-        <div class="foldingButtons"></div>
-      </h2>
+      <div class="foldingButtons">
+        <h2 class="headingTypeA">
+          <div class="foldingStatus"></div>
+          1 経緯・動機
+        </h2>
+      </div>
       <p class="foldingFactors">
         　私はOJゲージ車両の製作において「①内装を表現すること」、「②仕掛けを搭載すること」、「③望みのスケールスピードで走らせること」を目指しています。
         ①、②より、仕掛けを動作させるためのバッテリーや回路は車内に搭載できず、床下に積むことになります。
@@ -90,11 +94,14 @@
     </section>
 
     <section id="chapter2">
-      <h2 class="headingTypeA">2 原理　<a href="#contents" class="backToContents">目次に戻る</a></h2>
-      <section id="chapter2-1">
-        <h3 class="headingTypeB">2.1 ステッピングモータ<sup>[1]</sup>　<a href="#contents" class="backToContents">目次に戻る</a>
-          <div class="foldingButtons"></div>
-        </h3>
+      <h2 class="headingTypeA">2 原理</h2>
+      <section id="chapter2-1">       
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            2.1 ステッピングモータ<sup>[1]</sup>
+          </h3>
+        </div>
         <div class="foldingFactors">
           <p>
             　ステッピングモータはコイル、鉄心、永久磁石から成ります(図2.1.1)。
@@ -170,9 +177,12 @@
         </div>
       </section>
       <section id="chapter2-2">
-        <h3 class="headingTypeB">2.2 インバータ<sup>[2][3]</sup>　<a href="#contents" class="backToContents">目次に戻る</a>
-          <div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            2.2 インバータ<sup>[2][3]</sup>
+          </h3>
+        </div>
         <div class="foldingFactors">
           <p>
             　インバータは直流を交流に変換する装置であり、その基本回路は図2.2.1のように直流電源と4つのトランジスタ(電気的スイッチ)からなります。
@@ -308,11 +318,14 @@
     </section>
 
     <section id="chapter3">
-      <h2 class="headingTypeA">3 ソフトウェア　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+      <h2 class="headingTypeA">3 ソフトウェア</h2>
       <section id="chapter3-1">
-        <h3 class="headingTypeB">3.1 ソースコード全体　<a href="#contents" class="backToContents">目次に戻る</a>
-          <div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            3.1 ソースコード全体
+          </h3>
+        </div>
         <div class="foldingFactors">
           <p>
             　arduinoIDEで作成したソースコード全体です。
@@ -519,9 +532,12 @@
         </div>
       </section>
       <section id="chapter3-2">
-        <h3 class="headingTypeB">3.2 ソースコード解説　<a href="#contents" class="backToContents">目次に戻る</a>
-          <div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            3.2 ソースコード解説
+          </h3>
+        </div>
         <div class="foldingFactors">
           <section id="chapter3-2-1">
             <h4 class="headingTypeC">3.2.1 定数や変数の定義</h4>
@@ -601,9 +617,14 @@
             </p>
           </section>
           <p>↓改良版のソースコードでは、この項の必要性がなくなります。</p>
-          <s>
-            <section id="chapter3-2-6">
-              <h4 class="headingTypeC">3.2.6 非同期モード、同期モードの切り替え</h4>
+          <section id="chapter3-2-6">
+            <div class="foldingButtons">
+              <h4 class="headingTypeC">
+                <div class="foldingStatus"></div>
+                3.2.6 非同期モード、同期モードの切り替え
+              </h4>
+            </div>
+            <div class="foldingFactors">
               <p>
                 　モード切り替えのタイミングは正弦波位相psが0付近に戻ったときとしています(図3.2.6.1.)。
                 なぜなら、psが0から離れているときにモードを切り替えると出力正弦波の対称性が崩れるためです(図3.2.6.2.)。
@@ -640,8 +661,8 @@
                 <img src="pictures/chapter3/図3.2.5.5..png" height="200" alt="">
                 <figcaption>図3.2.6.5. peとpre_peの時間変化</figcaption>
               </figure>
-            </section>
-          </s>
+            </div>
+          </section>
           <section id="chapter3-2-7">
             <h4 class="headingTypeC">3.2.7 正弦波と三角波の大小比較とスイッチング</h4>
             <p>
@@ -712,8 +733,12 @@
         </div>
       </section>
       <section id="chapter3-3">
-        <h3 class="headingTypeB">3.3 ソースコード全体(改良版)　2025年2月初旬<div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            3.3 ソースコード全体(改良版)　2025年2月初旬　⇐New
+          </h3>
+        </div>      
         <div class="foldingFactors">
           <p>
             　金色の文字をクリックすると解説にジャンプします(ジャンプ先の章を展開しておいてください)。
@@ -931,8 +956,12 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
         </div>
       </section>
       <section id="chapter3-4">
-        <h3 class="headingTypeB">3.4 ソースコード解説(改良版)　2025年2月初旬<div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            3.4 ソースコード解説(改良版)　2025年2月初旬　⇐New
+          </h3>
+        </div>
         <div class="foldingFactors">
           <p>　主な変更点は次の通りです。</p>
           <section id="chapter3-4-1">
@@ -940,6 +969,7 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
             <p>
               　STBYピンを用いなくてもモータへの電力供給を断つことができるうえ、スタンバイモードによる待機電力の削減効果は微々たるものであると判断しました。
               これに加えGPIOピンの削減のため、STBYピンの使用をやめました。
+              使わなくなったSTBYピンには常に3.3Vを印加しておきます。
             </p>
           </section>
           <section id="chapter3-4-2">
@@ -996,11 +1026,14 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
     </section>
 
     <section id="chapter4">
-      <h2 class="headingTypeA">4 ハードウェア　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+      <h2 class="headingTypeA">4 ハードウェア</h2>
       <section id="chapter4-1">
-        <h3 class="headingTypeB">4.1 使ったもの　<a href="#contents" class="backToContents">目次に戻る</a>
-          <div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            4.1 使ったもの
+          </h3>
+        </div>
         <div class="foldingFactors">
           <p>　今回の製作で使ったものを表4.1.1に示します。</p>
           <table id="table4-1-1">
@@ -1089,9 +1122,12 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
         </div>
       </section>
       <section id="chapter4-2">
-        <h3 class="headingTypeB">4.2 回路　<a href="#contents" class="backToContents">目次に戻る</a>
-          <div class="foldingButtons"></div>
-        </h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            4.2 回路
+          </h3>
+        </div>
         <div class="foldingFactors">
           <p>
             　制御のほとんどをマイコンが担ううえにインバータがモジュール化されているため、回路構成は図4.2.1.のように小規模で見かけ上シンプルです。
@@ -1179,12 +1215,30 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
           </table>
         </div>
       </section>
+      <section id="chapter4-3">
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            4.3 回路(改良版)　2025年2月初旬　⇐New
+          </h3>
+        </div>
+        <div class="foldingFactors">
+          <p>　改良版とはいっても、STBYピンを廃止し、進行方向切り替えのためのスイッチを取り付けただけですが。</p>
+          <figure>
+            <img src="pictures/chapter4/図4.2..png">
+            <figcaption>図4.3.1. 回路図(改良版)</figcaption>
+          </figure>
+        </div>
+      </section>
     </section>
 
     <section id="chapter5">
-      <h2 class="headingTypeA">5 結果　<a href="#contents" class="backToContents">目次に戻る</a>
-        <div class="foldingButtons"></div>
-      </h2>
+      <div class="foldingButtons">
+        <h2 class="headingTypeA">
+          <div class="foldingStatus"></div>
+          5 結果
+        </h2>
+      </div>
       <div class="foldingFactors">
         <p>
           　三角波周波数ftが800Hzで一定のときが非同期モードです。
@@ -1199,10 +1253,15 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
     </section>
 
     <section id="chapter6">
-      <h2 class="headingTypeA">6 その他　<a href="#contents" class="backToContents">目次に戻る</a></h2>
+      <h2 class="headingTypeA">6 その他</h2>
       <p>　この項目では気づいたことや今後の展望などの雑多なことを書きます。</p>
       <section id="chapter6-1">
-        <h3 class="headingTypeB">6.1 2種類のモータドライバ(A4988とTB6612FNG)の比較<div class="foldingButtons"></div></h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            6.1 2種類のモータドライバ(A4988とTB6612FNG)の比較
+          </h3>
+        </div>
         <p class="foldingFactors">
           　ステッピングモータを回す簡単な方法はA4988のようなモータドライバを使用することです。
           A4988は最低2本の信号線(一方は回転方向、他方は回転速度を定める)でステッピングモータを回すことができます。
@@ -1215,7 +1274,12 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
         </p>
       </section>
       <section id="chapter6-2">
-        <h3 class="headingTypeB">6.2 加速度について<div class="foldingButtons"></div></h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            6.2 加速度について
+          </h3>
+        </div>
         <p class="foldingFactors">
           　今回はVVVF制御がメインテーマであるため、加速度の制御は可変抵抗を用いてシンプルなものとしました。
           実際の電車の加速度はマスコンからの入力だけでなく電車の速さにも依存するため、これを考慮した関数を作る必要があります。
@@ -1224,7 +1288,12 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
         </p>
       </section>
       <section id="chapter6-3">
-        <h3 class="headingTypeB">6.3 コギングトルク<div class="foldingButtons"></div></h3>
+        <div class="foldingButtons">
+          <h3 class="headingTypeB">
+            <div class="foldingStatus"></div>
+            6.3 コギングトルク
+          </h3>
+        </div>
         <p class="foldingFactors">
           　2.1.項では、図2.1.3.において鉄心と回転子の間にはたらく吸引力を考慮しませんでした。
           このため、正弦波交流電流を流すと回転子は滑らかに回転しました。
@@ -1269,7 +1338,7 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
       </div>
     </aside>
 
-    <a class="backToTop" href="#top">ページ上部に戻る</a>
+    <!-- <a class="backToTop" href="#top">ページ上部に戻る</a> -->
   </article>
 
   <footer>
