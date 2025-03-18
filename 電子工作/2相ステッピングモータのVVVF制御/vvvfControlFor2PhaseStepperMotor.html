@@ -792,7 +792,7 @@ bool forward = false;     <div class="comment">//前進しているかを示す�
 
 hw_timer_t* VVVF_timer = NULL;   <div class="comment">//タイマー割込みの設定　<a href="#chapter3-2-4">3.2.4 タイマー割込みについて</a></div>
 void IRAM_ATTR onVVVF_Timer() {  <div class="comment">//タイマー割込みで行う処理　<a href="#chapter3-2-4">3.2.4 タイマー割込みについて</a></div>
-if (0 &lt;&lt; speed) {               <div class="comment">//走行中</div>
+if (0 &lt; speed) {               <div class="comment">//走行中</div>
   <div class="comment">//正弦波周波数fsと正弦波位相psを計算</div>
   fs = (speed >> 5) * FREQ_COEF >> 15;  <div class="comment">//[mHz]</div>
   static uint32_t ps;
@@ -802,7 +802,7 @@ if (0 &lt;&lt; speed) {               <div class="comment">//走行中</div>
   <div class="comment">//三角波位相ptを計算</div>
   static uint32_t pt;
   if (cruise == false) {         <div class="comment">//力行または制動の場合</div>
-    if (speed &lt;&lt; BORDER_SPEED) {  <div class="comment">//非同期モードの場合　<a href="#chapter3-4-3">3.4.3 ランダム変調の高速化</a></div>
+    if (speed &lt; BORDER_SPEED) {  <div class="comment">//非同期モードの場合　<a href="#chapter3-4-3">3.4.3 ランダム変調の高速化</a></div>
       static uint16_t counter;
       counter += 2;
       pt += (2 * forward - 1) * (ASYNC_DP + RANDOM_FREQ[counter / 256] * 8);  <div class="comment">//<a href="#chapter3-4-4">3.4.4 進行方向の切り替え</a></div>
@@ -834,18 +834,18 @@ if (0 &lt;&lt; speed) {               <div class="comment">//走行中</div>
     if (vs_90 > vt_90 && vt_90 > -vs_90) {  <div class="comment">//B相正回転</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN1);
       GPIO.out_w1tc = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN2);
-    } else if (vs_90 &lt;&lt; vt_90 && vt_90 &lt;&lt; -vs_90) {  <div class="comment">//B相逆回転</div>
+    } else if (vs_90 &lt; vt_90 && vt_90 &lt; -vs_90) {  <div class="comment">//B相逆回転</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN2);
       GPIO.out_w1tc = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1);
     } else {  <div class="comment">//B相ショートブレーキ</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN1) + (1 &lt;&lt; BIN2);
       GPIO.out_w1tc = (1 &lt;&lt; AIN2);
     }
-  } else if (vs &lt;&lt; vt && vt &lt;&lt; -vs) {         <div class="comment">//A相逆回転</div>
+  } else if (vs &lt; vt && vt &lt; -vs) {         <div class="comment">//A相逆回転</div>
     if (vs_90 > vt_90 && vt_90 > -vs_90) {  <div class="comment">//B相正回転</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1);
       GPIO.out_w1tc = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN2);
-    } else if (vs_90 &lt;&lt; vt_90 && vt_90 &lt;&lt; -vs_90) {  <div class="comment">//B相逆回転</div>
+    } else if (vs_90 &lt; vt_90 && vt_90 &lt; -vs_90) {  <div class="comment">//B相逆回転</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN2);
       GPIO.out_w1tc = (1 &lt;&lt; AIN1) + (1 &lt;&lt; BIN1);
     } else {  <div class="comment">//B相ショートブレーキ</div>
@@ -856,7 +856,7 @@ if (0 &lt;&lt; speed) {               <div class="comment">//走行中</div>
     if (vs_90 > vt_90 && vt_90 > -vs_90) {  <div class="comment">//B相正回転</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN1);
       GPIO.out_w1tc = (1 &lt;&lt; BIN2);
-    } else if (vs_90 &lt;&lt; vt_90 && vt_90 &lt;&lt; -vs_90) {  <div class="comment">//B相逆回転</div>
+    } else if (vs_90 &lt; vt_90 && vt_90 &lt; -vs_90) {  <div class="comment">//B相逆回転</div>
       GPIO.out_w1ts = (1 &lt;&lt; AIN1) + (1 &lt;&lt; AIN2) + (1 &lt;&lt; BIN2);
       GPIO.out_w1tc = (1 &lt;&lt; BIN1);
     } else {  <div class="comment">//B相ショートブレーキ</div>
@@ -879,18 +879,18 @@ pinMode(ACCEL_PIN, INPUT);
 pinMode(DIRECTION_PIN, INPUT);
 
 <div class="comment">//配列SIN[ ]と配列TRI[ ]に値を代入</div>
-for (int i = 0; i &lt;&lt; TABLE_NUMBER; i++) {
+for (int i = 0; i &lt; TABLE_NUMBER; i++) {
   SIN[i] = round(TABLE_AMP * sin(2 * PI * i / TABLE_NUMBER));
 }
-for (int i = 0; i &lt;&lt; TABLE_NUMBER / 2; i++) {
+for (int i = 0; i &lt; TABLE_NUMBER / 2; i++) {
   TRI[i] = round(TABLE_AMP * (4.0 * i / TABLE_NUMBER - 1));
 }
-for (int i = TABLE_NUMBER / 2; i &lt;&lt; TABLE_NUMBER; i++) {
+for (int i = TABLE_NUMBER / 2; i &lt; TABLE_NUMBER; i++) {
   TRI[i] = round(TABLE_AMP * (-4.0 * i / TABLE_NUMBER + 3));
 }
 
 <div class="comment">//<a href="#chapter3-4-3">3.4.3 ランダム変調の高速化</a></div>
-for (int i = 0; i &lt;&lt; 256; i++) {  <div class="comment">//配列RANDOM_FREQ[]に-128~127の整数を昇順で代入</div>
+for (int i = 0; i &lt; 256; i++) {  <div class="comment">//配列RANDOM_FREQ[]に-128~127の整数を昇順で代入</div>
   RANDOM_FREQ[i] = i - 128;
   Serial.printf("%3d ", RANDOM_FREQ[i]);  <div class="comment">//シリアルモニタで確認</div>
 }
@@ -903,7 +903,7 @@ for (int i = 255; 0 &lt;= i; i--) {  <div class="comment">//Fisher-Yatesのシ�
 }
 <div class="comment">//↓シリアルモニタで配列がシャッフルされていることを確認</div>
 Serial.println();
-for (int i = 0; i &lt;&lt; 256; i++) {
+for (int i = 0; i &lt; 256; i++) {
   Serial.printf("%3d ", RANDOM_FREQ[i]);
 }
 
@@ -923,7 +923,7 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
   if (read > 100) {  <div class="comment">//力行</div>
     read = read - 100;
     cruise = false;
-  } else if (read &lt;&lt; -100) {  <div class="comment">//制動</div>
+  } else if (read &lt; -100) {  <div class="comment">//制動</div>
     read = read + 100;
     cruise = false;
   } else {  <div class="comment">//惰性</div>
@@ -931,10 +931,10 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
     cruise = true;
   }
   speed += read * 5;                       <div class="comment">//可変抵抗の電圧を読み取って加速度に換算</div>
-  if (speed &lt;&lt; 0) {                         <div class="comment">//停車</div>
+  if (speed &lt; 0) {                         <div class="comment">//停車</div>
     speed = 0;                             <div class="comment">//最低速度を0m/sに制限</div>
     forward = digitalRead(DIRECTION_PIN);  <div class="comment">//停車中のみ進行方向を切り替える　<a href="#chapter3-4-4">3.4.4 進行方向の切り替え</a></div>
-  } else if (MAX_SPEED &lt;&lt; speed) {
+  } else if (MAX_SPEED &lt; speed) {
     speed = MAX_SPEED;  <div class="comment">//最高速度をMAX_SPEEDに制限</div>
   }
   Serial.printf(" read   speed     Vs/Vt     fs       ft  \n");
@@ -944,7 +944,7 @@ if (uint16_t(millis() - pre_millis) > 10) {  <div class="comment">//前回の処
   Serial.printf("%4d Hz  ", fs / 1024);                      <div class="comment">//正弦波周波数を表示</div>
   if (cruise == true) {
     Serial.printf("%4d Hz\n", CRUISE_FREQ / 1024);
-  } else if (speed &lt;&lt; BORDER_SPEED) {
+  } else if (speed &lt; BORDER_SPEED) {
     Serial.printf("%4d Hz\n", ASYNC_FREQ / 1024);
   } else {
     Serial.printf("%2dfs Hz\n", SYNC_PULSE);
